@@ -2,6 +2,8 @@ import { IAddOn } from '../IFormInput';
 import { SummaryDiv, TotalDiv, SummaryRow, ChangePlanButton, HorizontalRule, TotalPrice } from './SummaryStyles';
 import { OfferHeader, OfferParagraph } from '../PlanSelection/PlanSelectionStyles';
 
+import { useNavigate } from 'react-router-dom';
+
 interface SummaryProps {
   watch: (field: string) => any;
   isYearlyPlan: boolean;
@@ -16,6 +18,12 @@ const Summary: React.FC<SummaryProps> = ({ isYearlyPlan, watch }) => {
 
   const totalPrice = sumOfChosenAddOnsPrice + watchShowPlan.price;
 
+  const navigate = useNavigate();
+
+  const goToPlanSelection = () => {
+    navigate('/planselection');
+  };
+
   return (
     <>
       <SummaryDiv>
@@ -24,7 +32,7 @@ const Summary: React.FC<SummaryProps> = ({ isYearlyPlan, watch }) => {
             <OfferHeader fontSize="14px">
               {watchShowPlan.name} {planType ? '(Yearly)' : '(Monthly)'}
             </OfferHeader>
-            <ChangePlanButton>Change</ChangePlanButton>
+            <ChangePlanButton onClick={goToPlanSelection}>Change</ChangePlanButton>
           </div>
           <OfferHeader>
             ${watchShowPlan.price}/{planType ? 'yr' : 'mo'}

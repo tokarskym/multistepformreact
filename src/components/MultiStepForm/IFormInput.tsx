@@ -2,6 +2,7 @@ export interface IAddOn {
   name: string;
   isChosen: boolean;
   price: number;
+  description?: string;
 }
 
 export interface IFormInput {
@@ -12,5 +13,5 @@ export interface IFormInput {
     name: string;
     price: number;
   };
-  addOns: IAddOn[];
+  addOns: IAddOn[] | null;
 }

@@ -1,5 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { useNavigate } from 'react-router-dom';
+
+import { formSchema } from './ValidationSchema';
 
 import { FormContainer, FormHeader, FormParagraph } from './MultiStepFormStyles';
 
@@ -9,10 +13,25 @@ import PersonalInformation from '../MultiStepForm/PersonalInformation/PersonalIn
 import PlanSelection from './PlanSelection/PlanSelection';
 import AddOns from './AddOns/AddOns';
 import Summary from './Summary/Summary';
+import Footer from '../Footer/Footer';
 
 interface MultiStepFormProps {
   step: number;
 }
+
+export type FieldKeys =
+  | 'name'
+  | 'email'
+  | 'phone'
+  | 'selectedPlan'
+  | 'addOns'
+  | 'selectedPlan.name'
+  | 'selectedPlan.price'
+  | `addOns.${number}`
+  | `addOns.${number}.name`
+  | `addOns.${number}.price`
+  | `addOns.${number}.isChosen`
+  | `addOns.${number}.description`;
 
 const MultiStepForm: React.FC<MultiStepFormProps> = ({ step }) => {
   const {
@@ -22,12 +41,31 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ step }) => {
     watch,
     setValue,
     formState: { errors },
-  } = useForm<IFormInput>();
+    trigger,
+  } = useForm<IFormInput>({
+    resolver: yupResolver<IFormInput>(formSchema),
+  });
 
   const [isYearlyPlan, setIsYearlyPlan] = useState(false);
 
+  const validateForm = async (fields: FieldKeys[]) => {
+    const isValid = await trigger(fields);
+    return isValid;
+  };
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const isYearlySub = localStorage.getItem('yearlySub');
+    if (isYearlySub) {
+      setIsYearlyPlan(JSON.parse(isYearlySub));
+    }
+  }, []);
+
   const setYearlyPlan: () => void = () => {
-    setIsYearlyPlan(!isYearlyPlan);
+    const updatedIsYearlyPlan = !isYearlyPlan;
+    setIsYearlyPlan(updatedIsYearlyPlan);
+    return updatedIsYearlyPlan;
   };
 
   let headerMessage = '';
@@ -43,17 +81,52 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ step }) => {
     (headerMessage = 'Finishing up') && (paragraphMessage = 'Double-check everything looks OK before confirming.');
   }
 
+  const nextStep: () => void = () => {
+    switch (step) {
+      case 1:
+        navigate('/planselection');
+        break;
+      case 2:
+        navigate('/addons');
+        break;
+      case 3:
+        navigate('/summary');
+        break;
+      default:
+        break;
+    }
+  };
+
+  const previousStep: () => void = () => {
+    switch (step) {
+      case 2:
+        navigate('/personalinformation');
+        break;
+      case 3:
+        navigate('/planselection');
+        break;
+      case 4:
+        navigate('/addons');
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
-    <FormContainer>
-      <FormHeader>{headerMessage}</FormHeader>
-      <FormParagraph>{paragraphMessage}</FormParagraph>
-      <form>
-        {step === 1 && <PersonalInformation register={register as any} />}
-        {step === 2 && <PlanSelection control={control} setValue={setValue} setYearlyPlan={setYearlyPlan} isYearlyPlan={isYearlyPlan} />}
-        {step === 3 && <AddOns control={control} isYearlyPlan={isYearlyPlan} />}
-        {step === 4 && <Summary isYearlyPlan={isYearlyPlan} watch={watch} />}
-      </form>
-    </FormContainer>
+    <>
+      <FormContainer>
+        <FormHeader>{headerMessage}</FormHeader>
+        <FormParagraph>{paragraphMessage}</FormParagraph>
+        <form>
+          {step === 1 && <PersonalInformation register={register as any} errors={errors} />}
+          {step === 2 && <PlanSelection control={control} setValue={setValue} setYearlyPlan={setYearlyPlan} isYearlyPlan={isYearlyPlan} errors={errors} />}
+          {step === 3 && <AddOns control={control} setValue={setValue} isYearlyPlan={isYearlyPlan} />}
+          {step === 4 && <Summary isYearlyPlan={isYearlyPlan} watch={watch} />}
+        </form>
+      </FormContainer>
+      <Footer step={step} errors={errors} validateForm={validateForm} nextStep={nextStep} previousStep={previousStep} />
+    </>
   );
 };
 

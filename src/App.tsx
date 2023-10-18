@@ -1,31 +1,27 @@
-import { useState } from 'react';
 import { ThemeProvider } from 'styled-components';
 
 import Navbar from './components/Navbar/Navbar';
-import Footer from './components/Footer/Footer';
 import MultiStepForm from './components/MultiStepForm/MultiStepForm';
 
 import GlobalStyle from './components/GlobalStyles/GlobalStyles';
 import theme from './components/GlobalStyles/Theme';
-import { set } from 'react-hook-form';
+
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 function App() {
-  const [step, setStep] = useState(1);
-
-  const nextStep: () => void = () => {
-    setStep((prev) => prev + 1);
-  };
-
-  const previousStep: () => void = () => {
-    setStep((prev) => prev - 1);
-  };
-
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyle />
-      <Navbar step={step} />
-      <MultiStepForm step={step} />
-      <Footer nextStep={nextStep} previousStep={previousStep} step={step} />
+      <Router>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Navigate to="/personalinformation" />} />
+          <Route path="/personalinformation" element={<MultiStepForm step={1} />} />
+          <Route path="/planselection" element={<MultiStepForm step={2} />} />
+          <Route path="/addons" element={<MultiStepForm step={3} />} />
+          <Route path="/summary" element={<MultiStepForm step={4} />} />
+        </Routes>
+      </Router>
     </ThemeProvider>
   );
 }

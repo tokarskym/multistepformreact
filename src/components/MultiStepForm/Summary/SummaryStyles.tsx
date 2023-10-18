@@ -34,6 +34,6 @@ export const HorizontalRule = styled.hr`
 
 export const TotalPrice = styled.h1`
   color: ${(props) => props.theme.colors.purplishBlue};
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
 `;

@@ -1,26 +1,58 @@
 import { Checkbox, CheckboxContainer, AddOnsContainer } from '../AddOns/AddOnsStyles';
 import { OfferHeader, OfferParagraph, OfferExtra } from '../PlanSelection/PlanSelectionStyles';
 
+import { IAddOn, IFormInput } from '../IFormInput';
 import { AddOnsMonthly } from './Data/AddOnsData';
-import { useState } from 'react';
-import { Controller } from 'react-hook-form';
+import { useState, useEffect } from 'react';
+import { Controller, UseFormSetValue } from 'react-hook-form';
 
 interface AddOnsProps {
+  setValue: UseFormSetValue<IFormInput>;
   isYearlyPlan: boolean;
   control: any;
 }
 
-const AddOns: React.FC<AddOnsProps> = ({ control, isYearlyPlan }) => {
-    const [activeCheckboxNames, setActiveCheckboxNames] = useState<string[]>([]);
-    
-  const AddOnsYearly = AddOnsMonthly.map((addOn) => ({
-    ...addOn,
-    price: addOn.price * 10,
-  }));
+const AddOns: React.FC<AddOnsProps> = ({ control, isYearlyPlan, setValue }) => {
+  const [activeCheckboxNames, setActiveCheckboxNames] = useState<string[]>([]);
+  const [currentAddOns, setCurrentAddOns] = useState<IAddOn[]>(AddOnsMonthly);
 
-  const currentAddOns = isYearlyPlan ? AddOnsYearly : AddOnsMonthly;
+  const setNewAddOns: (arg: IAddOn[]) => void = (arg) => {
+    setCurrentAddOns(arg);
+  };
 
+  const setNewCheckBoxes: (arg: string[]) => void = (arg) => {
+    setActiveCheckboxNames(arg);
+  };
 
+  useEffect(() => {
+    const resetAddOns = AddOnsMonthly.map((addon) => {
+      const price = isYearlyPlan ? addon.price * 10 : addon.price;
+      return { ...addon, isChosen: false, price };
+    });
+    setValue('addOns', resetAddOns);
+    setNewAddOns(resetAddOns);
+  }, [isYearlyPlan]);
+
+  useEffect(() => {
+    const chosenCheckboxes = localStorage.getItem('chosenCheckboxes');
+    if (chosenCheckboxes) {
+      const parsedCheckboxes = JSON.parse(chosenCheckboxes);
+      setNewCheckBoxes(parsedCheckboxes);
+
+      const newAddOnsData: IAddOn[] = currentAddOns.map((addOn: IAddOn) => {
+        const price: number = isYearlyPlan ? addOn.price * 10 : addOn.price;
+        const isChosen: boolean = parsedCheckboxes.includes(addOn.name);
+        return {
+          ...addOn,
+          isChosen: isChosen,
+          price: price,
+        };
+      });
+
+      setNewAddOns(newAddOnsData);
+      setValue('addOns', newAddOnsData);
+    }
+  }, []);
 
   return (
     <>
@@ -40,13 +72,16 @@ const AddOns: React.FC<AddOnsProps> = ({ control, isYearlyPlan }) => {
               <Checkbox
                 {...field}
                 type="checkbox"
+                checked={activeCheckboxNames.includes(addOn.name)}
                 onChange={(e) => field.onChange(e.target.checked)}
                 onClick={() => {
-                  if (activeCheckboxNames.includes(addOn.name)) {
-                    setActiveCheckboxNames(activeCheckboxNames.filter((name) => name !== addOn.name));
-                  } else {
-                    setActiveCheckboxNames([...activeCheckboxNames, addOn.name]);
-                  }
+                  setActiveCheckboxNames((prevActiveCheckboxNames) => {
+                    const updatedCheckboxNames = prevActiveCheckboxNames.includes(addOn.name)
+                      ? prevActiveCheckboxNames.filter((name) => name !== addOn.name)
+                      : [...prevActiveCheckboxNames, addOn.name];
+                    localStorage.setItem('chosenCheckboxes', JSON.stringify(updatedCheckboxNames));
+                    return updatedCheckboxNames;
+                  });
                 }}
               />
             )}
